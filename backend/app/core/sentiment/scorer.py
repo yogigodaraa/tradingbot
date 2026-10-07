@@ -1,10 +1,10 @@
 import logging
 import math
-from datetime import datetime, timedelta
+from datetime import datetime
 
-from app.core.sentiment.base import SentimentResult, TickerSentiment
+from app.core.sentiment.base import TickerSentiment
 from app.core.sentiment.finbert import FinBERTAnalyzer
-from app.core.sentiment.news_fetcher import NewsFetcher, NewsArticle
+from app.core.sentiment.news_fetcher import NewsFetcher
 
 logger = logging.getLogger(__name__)
 

@@ -2,7 +2,6 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime
 
-from app.core.execution.base import Broker
 from app.core.models.base import Prediction, PredictionModel
 from app.core.sentiment.base import SentimentAnalyzer, TickerSentiment
 
@@ -65,7 +64,9 @@ class SignalGenerator:
         # Model prediction score
         model_score = 0.0
         if prediction:
-            model_score = prediction.confidence if prediction.direction == "long" else -prediction.confidence
+            model_score = (
+                prediction.confidence if prediction.direction == "long" else -prediction.confidence
+            )
             scores.append(model_score)
             weights.append(self.weights["model"])
 

@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 
 from app.core.models.base import Prediction, PredictionModel
-from app.core.models.features import build_features
 
 logger = logging.getLogger(__name__)
 

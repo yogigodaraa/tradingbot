@@ -1,9 +1,9 @@
 import logging
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date
 
 from app.config import settings
-from app.core.execution.base import AccountInfo, Broker, PositionInfo
+from app.core.execution.base import AccountInfo, PositionInfo
 from app.core.signals.generator import TradingSignal
 
 logger = logging.getLogger(__name__)

@@ -5,7 +5,7 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 
-from app.core.backtest.metrics import compute_metrics, BacktestMetrics
+from app.core.backtest.metrics import BacktestMetrics, compute_metrics
 from app.core.models.features import build_features
 
 logger = logging.getLogger(__name__)

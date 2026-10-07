@@ -60,3 +60,9 @@ line-length = 100
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W"]
+
+[tool.ruff.lint.per-file-ignores]
+# Single-letter capitals follow maths/ML notation: HMM transition matrix A, sequence
+# length T, feature matrix X / X_train. Renaming them would hurt readability.
+"app/core/backtest/regime.py" = ["N803", "N806"]
+"app/core/models/swing.py" = ["N806"]

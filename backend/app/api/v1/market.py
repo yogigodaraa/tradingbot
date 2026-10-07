@@ -120,7 +120,9 @@ async def get_movers():
             logger.warning(f"Failed to get mover data for {ticker}: {e}")
 
     # Sort by absolute change percentage
-    gainers = sorted([m for m in movers if m["change_pct"] > 0], key=lambda x: x["change_pct"], reverse=True)
+    gainers = sorted(
+        [m for m in movers if m["change_pct"] > 0], key=lambda x: x["change_pct"], reverse=True
+    )
     losers = sorted([m for m in movers if m["change_pct"] < 0], key=lambda x: x["change_pct"])
 
     return {
