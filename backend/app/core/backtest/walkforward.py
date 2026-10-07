@@ -33,6 +33,11 @@ import pandas as pd
 from app.core.backtest.metrics import BacktestMetrics
 
 
+def _to_datetime(ts):
+    """Convert a pandas Timestamp to datetime; pass other values through unchanged."""
+    return ts.to_pydatetime() if hasattr(ts, "to_pydatetime") else ts
+
+
 @dataclass
 class WalkForwardFold:
     """Results from one fold of walk-forward validation."""
@@ -86,12 +91,16 @@ class WalkForwardReport:
                     "test": [f.test_start.isoformat(), f.test_end.isoformat()],
                     "train_size": f.train_size,
                     "test_size": f.test_size,
-                    "metrics": f.metrics.to_dict() if hasattr(f.metrics, "to_dict") else vars(f.metrics),
+                    "metrics": (
+                        f.metrics.to_dict() if hasattr(f.metrics, "to_dict") else vars(f.metrics)
+                    ),
                 }
                 for f in self.folds
             ],
             "aggregate": (
-                self.aggregate.to_dict() if self.aggregate and hasattr(self.aggregate, "to_dict") else None
+                self.aggregate.to_dict()
+                if self.aggregate and hasattr(self.aggregate, "to_dict")
+                else None
             ),
             "stability": round(self.stability, 3),
             "fold_count": len(self.folds),
@@ -162,10 +171,10 @@ def walk_forward(
         folds.append(
             WalkForwardFold(
                 fold_index=fold_idx,
-                train_start=train_start.to_pydatetime() if hasattr(train_start, "to_pydatetime") else train_start,
-                train_end=train_end.to_pydatetime() if hasattr(train_end, "to_pydatetime") else train_end,
-                test_start=test_start.to_pydatetime() if hasattr(test_start, "to_pydatetime") else test_start,
-                test_end=test_end.to_pydatetime() if hasattr(test_end, "to_pydatetime") else test_end,
+                train_start=_to_datetime(train_start),
+                train_end=_to_datetime(train_end),
+                test_start=_to_datetime(test_start),
+                test_end=_to_datetime(test_end),
                 metrics=metrics,
                 train_size=len(train),
                 test_size=len(test),

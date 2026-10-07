@@ -1,4 +1,3 @@
-import math
 
 
 def kelly_fraction(win_rate: float, avg_win: float, avg_loss: float) -> float:

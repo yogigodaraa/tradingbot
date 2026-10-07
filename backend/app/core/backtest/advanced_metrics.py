@@ -27,7 +27,9 @@ def to_returns(equity: np.ndarray) -> np.ndarray:
 
 # ─── Core risk-adjusted ratios ───────────────────────────────────────────
 
-def sharpe_ratio(returns: np.ndarray, *, rf: float = 0.0, periods_per_year: int = TRADING_DAYS) -> float:
+def sharpe_ratio(
+    returns: np.ndarray, *, rf: float = 0.0, periods_per_year: int = TRADING_DAYS
+) -> float:
     """Excess return per unit of volatility, annualised.
 
     `rf` is the per-period risk-free rate (already adjusted for the
@@ -242,7 +244,9 @@ def compute_advanced_metrics(
     m.cvar_95 = conditional_var(returns, confidence=0.95)
     m.total_return = float(equity[-1] / equity[0] - 1)
     years = len(returns) / periods_per_year
-    m.annualised_return = float((1 + m.total_return) ** (1 / max(years, 1e-9)) - 1) if years > 0 else 0.0
+    m.annualised_return = (
+        float((1 + m.total_return) ** (1 / max(years, 1e-9)) - 1) if years > 0 else 0.0
+    )
     m.annualised_volatility = float(np.std(returns, ddof=1) * np.sqrt(periods_per_year))
     m.skew = float(_moment(returns, 3))
     m.kurtosis = float(_moment(returns, 4))

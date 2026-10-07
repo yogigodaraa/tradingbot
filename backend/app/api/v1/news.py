@@ -180,8 +180,9 @@ async def get_news_impact(
 
     Combines news sentiment timeline with price data to visualize impact.
     """
-    from app.core.data.alpaca import AlpacaDataProvider
     from datetime import timedelta
+
+    from app.core.data.alpaca import AlpacaDataProvider
 
     fetcher = get_news_fetcher()
     analyzer = get_analyzer()
@@ -248,7 +249,10 @@ async def get_news_impact(
                 sum(n["sentiment_score"] for n in news_timeline) / len(news_timeline), 3
             ) if news_timeline else 0,
             "price_change_7d": round(
-                ((price_timeline[-1]["close"] - price_timeline[0]["close"]) / price_timeline[0]["close"]) * 100, 2
+                (price_timeline[-1]["close"] - price_timeline[0]["close"])
+                / price_timeline[0]["close"]
+                * 100,
+                2,
             ) if len(price_timeline) >= 2 else 0,
         },
     }

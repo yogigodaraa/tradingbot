@@ -1,4 +1,77 @@
-# Trading Bot - Architecture Document
+# Architecture
+
+This file has two parts:
+
+1. **[Code tour](#code-tour-read-this-first)**: what the code does *today*, written for learning.
+2. **[Original design document](#original-design-document)**: the full plan from April 2026. Some of it (PostgreSQL/TimescaleDB, the live scheduler) isn't built yet.
+
+---
+
+## Code tour (read this first)
+
+### The pipeline in one picture
+
+```text
+AlpacaDataProvider ──bars──▶ build_features() ──▶ SwingTradingModel / LongTermFactorModel / EnsembleModel
+                                                         │ prediction (direction, confidence)
+NewsFetcher ──headlines──▶ FinBERTAnalyzer ──▶ SentimentScorer ──┤ sentiment score
+                                                         ▼
+                                              SignalGenerator  (weights: model 0.50, sentiment 0.30, technical 0.20)
+                                                         │ TradingSignal(action, confidence, entry_price, …)
+                                                         ▼
+                                              RiskManager.check_signal()  ◀── account + open positions
+                                                         │ approved + adjusted_quantity
+                                                         ▼
+                                              AlpacaBroker.submit_order()  ──▶ paper-api.alpaca.markets (default)
+```
+
+`TradingEngine.scan_watchlist()` (`backend/app/core/engine.py`) runs exactly this loop for each
+ticker. **It isn't started anywhere yet.** `main.py`'s lifespan has a `TODO`, so nothing trades
+automatically today.
+
+### Modules (`backend/app/`)
+
+| Path | Responsibility | Concept to learn |
+|---|---|---|
+| `config.py` | All settings from `.env` via pydantic-settings; `alpaca_paper=True` by default | Safe defaults |
+| `core/data/` | `DataProvider` interface + Alpaca implementation (bars, quotes) | Dependency inversion: the engine depends on the interface, not on Alpaca |
+| `core/models/features.py` | Turns OHLCV bars into model features (returns, indicators) | Feature engineering |
+| `core/models/swing.py`, `longterm.py`, `ensemble.py` | `PredictionModel` implementations (XGBoost / scikit-learn) | Train/validation splits, avoiding look-ahead bias |
+| `core/sentiment/` | Fetch news, score headlines with FinBERT (runs locally on CPU), aggregate per ticker | Domain-specific NLP models |
+| `core/signals/generator.py` | Weighted blend of model, sentiment and technical scores → `TradingSignal` | Ensembling signals |
+| `core/risk/manager.py` | **Mandatory gate**: circuit breaker, drawdown, confidence, max positions, position size, cash | Defensive design; read the tests |
+| `core/risk/kelly.py` | Kelly-criterion position sizing helpers (not used by the gate yet) | Bet sizing |
+| `core/execution/` | `Broker` interface + `AlpacaBroker` (paper/live switch) | Same interface pattern as data |
+| `core/backtest/` | Backtest engine, metrics (Sharpe, drawdown…), walk-forward validation, HMM/volatility regimes | Why a single backtest overfits; walk-forward fixes that |
+| `api/v1/` | FastAPI routers: portfolio, signals, trades, market, news, backtest, WebSocket | Thin API over core modules |
+| `db/` | SQLAlchemy async models + session (SQLite file by default) | Async ORM |
+
+### How the risk gate decides (in order)
+
+1. **Circuit breaker** already tripped today? → reject.
+2. **Daily realised loss** ≥ `MAX_DAILY_LOSS_PCT` of equity? → trip the breaker and reject. It resets the next day.
+3. **Drawdown** from peak equity ≥ `MAX_DRAWDOWN_PCT`? → reject.
+4. **Confidence** < `MIN_SIGNAL_CONFIDENCE`? → reject.
+5. **Buy** while holding `MAX_OPEN_POSITIONS` already? → reject.
+6. **Size** to `MAX_POSITION_PCT` of equity (minus what you already hold in that ticker).
+7. **Cash**: shrink to available cash, and reject if under $1.
+
+Each rule has a test in `backend/tests/unit/test_risk_manager.py`. Change a rule, and a test should change too.
+
+**Known gaps** (tracked as issues): sells are sized like buys rather than from the held quantity, and
+the docstring mentions a sector-concentration limit that isn't implemented.
+
+### Where to start reading
+
+1. `backend/tests/unit/test_risk_manager.py`: the rules as executable examples.
+2. `backend/app/core/engine.py`: `scan_watchlist()` end to end.
+3. `backend/app/core/backtest/walkforward.py`: a good introduction to honest model evaluation.
+
+---
+
+## Original design document
+
+### Trading Bot - Architecture Document
 
 > AI-powered quantitative trading bot with live news detection, sentiment analysis, and predictive algorithms.  
 > Author: Yogi | Created: 2026-04-15

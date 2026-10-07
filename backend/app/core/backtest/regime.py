@@ -124,7 +124,9 @@ def fit_two_state_hmm(
         for t in range(T - 1):
             for i in range(2):
                 for j in range(2):
-                    xi[t, i, j] = alpha[t, i] * A[i, j] * _gauss(x[t + 1], mu[j], sd[j]) * beta[t + 1, j]
+                    xi[t, i, j] = (
+                        alpha[t, i] * A[i, j] * _gauss(x[t + 1], mu[j], sd[j]) * beta[t + 1, j]
+                    )
             xi[t] /= xi[t].sum() + 1e-12
 
         # M-step
@@ -197,7 +199,9 @@ def _forward(x, mu, sd, A, pi):
     alpha[0] /= scale[0]
     for t in range(1, T):
         for j in range(2):
-            alpha[t, j] = sum(alpha[t - 1, i] * A[i, j] for i in range(2)) * _gauss(x[t], mu[j], sd[j])
+            alpha[t, j] = sum(alpha[t - 1, i] * A[i, j] for i in range(2)) * _gauss(
+                x[t], mu[j], sd[j]
+            )
         scale[t] = alpha[t].sum() + 1e-12
         alpha[t] /= scale[t]
     return alpha, scale

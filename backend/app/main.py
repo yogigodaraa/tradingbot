@@ -37,7 +37,9 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Trading Bot API",
-    description="AI-powered quantitative trading bot with live news detection and predictive algorithms",
+    description=(
+        "AI-powered quantitative trading bot with live news detection and predictive algorithms"
+    ),
     version="0.1.0",
     lifespan=lifespan,
 )

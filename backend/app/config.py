@@ -31,9 +31,13 @@ class Settings(BaseSettings):
     # Risk management
     max_position_pct: float = Field(default=0.20, description="Max % of portfolio per position")
     max_open_positions: int = Field(default=5, description="Max concurrent open positions")
-    max_daily_loss_pct: float = Field(default=0.03, description="Max daily loss before circuit breaker")
+    max_daily_loss_pct: float = Field(
+        default=0.03, description="Max daily loss before circuit breaker"
+    )
     max_drawdown_pct: float = Field(default=0.10, description="Max drawdown before pausing bot")
-    min_signal_confidence: float = Field(default=0.65, description="Min confidence to act on a signal")
+    min_signal_confidence: float = Field(
+        default=0.65, description="Min confidence to act on a signal"
+    )
 
     # Watchlist
     default_watchlist: list[str] = [
