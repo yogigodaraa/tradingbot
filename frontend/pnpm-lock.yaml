@@ -314,11 +314,11 @@ packages:
   '@floating-ui/utils@0.2.12':
     resolution: {integrity: sha512-HpCo8tmWzLVad5s2d19EhAz5zqrrQ6s69qd6moPMQvkOuSwDT1YgRfWSVuc4ennqrgv3OHppiOGMQ7oC13yIww==}
 
-  '@hono/node-server@1.19.18':
-    resolution: {integrity: sha512-609kppIP9GITS+EwPyB6Kiq8z2yXONaYD1VHpo7MMP9celRJYbkFr9KakJncHwK0EK/XYtlogqmrLchDv5HX5w==}
-    engines: {node: '>=18.14.1'}
+  '@hono/node-server@2.1.6':
+    resolution: {integrity: sha512-p/KH9MnfNcsm3sR6x4lNgm5j+QN4Et8srKredl9DZfXiyZ1UQ3aQ2YVpFLbqktYN5JI+DB+VZFKM2PqE5hLKjQ==}
+    engines: {node: '>=20'}
     peerDependencies:
-      hono: ^4
+      hono: ^4 || ^5.0.0-0
 
   '@humanfs/core@0.19.1':
     resolution: {integrity: sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA==}
@@ -3292,7 +3292,7 @@ snapshots:
 
   '@floating-ui/utils@0.2.12': {}
 
-  '@hono/node-server@1.19.18(hono@4.13.14)':
+  '@hono/node-server@2.1.6(hono@4.13.14)':
     dependencies:
       hono: 4.13.14
 
@@ -3435,7 +3435,7 @@ snapshots:
 
   '@modelcontextprotocol/sdk@1.32.2(supports-color@7.2.0)(zod@3.25.76)':
     dependencies:
-      '@hono/node-server': 1.19.18(hono@4.13.14)
+      '@hono/node-server': 2.1.6(hono@4.13.14)
       ajv: 8.18.0
       ajv-formats: 3.0.1
       content-type: 1.0.5
