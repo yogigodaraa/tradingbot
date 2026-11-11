@@ -67,6 +67,92 @@ the docstring mentions a sector-concentration limit that isn't implemented.
 2. `backend/app/core/engine.py`: `scan_watchlist()` end to end.
 3. `backend/app/core/backtest/walkforward.py`: a good introduction to honest model evaluation.
 
+### Walk-forward validation: why a single backtest overfits
+
+A backtest answers the question "would this strategy have made money on that
+data?" — but if you tuned the strategy on the same data, the honest answer is
+"you have measured how well it fits that data", which is a different thing.
+Every parameter you try and keep is a choice the historical data made for you.
+Try enough moving-average lengths, indicator thresholds or model settings and
+some combination will look great on the past by pure chance. That is
+**overfitting**, and its close cousin is **look-ahead bias**: any step that
+lets information from the future leak into a decision dated earlier — tuning
+on the test period is the most common leak, but so are indicators computed
+with centred windows or signals filled at the same close that produced them.
+
+Walk-forward validation (`backend/app/core/backtest/walkforward.py`) is the
+structural fix. The series is cut into a sequence of **folds**. Each fold gets
+a training window and the test window that immediately follows it. You may
+tune, fit and select on the training window only; the parameters are then
+frozen and scored once on the test window, which the strategy has never seen.
+Then the windows roll forward and the process repeats:
+
+```
+time ───────────────────────────────────────────────────────────────►
+
+fold 0   [====== train ======][=== test ===]
+fold 1          [====== train ======][=== test ===]
+fold 2                 [====== train ======][=== test ===]
+fold 3                        [====== train ======][=== test ===]
+
+         ◄── tune / fit here ──► ◄─ judge ─►
+                                 (never tuned on)
+```
+
+Two schemes decide how the training window moves:
+
+- **Rolling** (fixed size): the window slides, dropping old data. Right when
+  regimes change and stale data stops describing the market.
+- **Anchored** (expanding): the window keeps everything from the start and
+  grows. Right when more data genuinely helps and the process is stable.
+
+The honest performance estimate is the set of **out-of-sample test folds
+only** — the training results are discarded, because they are the numbers
+that were allowed to be optimised. What you read in a `WalkForwardReport`:
+
+- `folds[i].train_start … test_end` and `train_size` / `test_size`: exactly
+  which data each fold was allowed to see, and what it was judged on.
+- `folds[i].metrics`: the usual `BacktestMetrics` (return, Sharpe, drawdown,
+  win rate) for that fold's test window.
+- `aggregate`: the per-fold average of those metrics.
+- `stability`: mean fold Sharpe ÷ its standard deviation. Above ~1.5 the
+  folds mostly agree; near zero the "edge" is a few lucky windows.
+
+#### Worked example (paper data)
+
+A moving-average crossover (long when the fast MA is above the slow MA,
+slow = 3× fast) whose fast window is chosen from {5, 10, 20, 40} **by its
+training-window result** — the tuning is the interesting part. Data is
+synthetic paper data (seeded random walk with drifting regimes, 2023–2025),
+produced by running `walk_forward(...)` with a 365-day training window and
+63-day test windows, rolling scheme.
+
+The single full-sample backtest — tune and judge on the same three years —
+picks fast = 10 and reports **+0.56% total return, Sharpe −0.32, 13 trades**:
+one lukewarm number that conceals everything below.
+
+| Fold | Test window | Fast chosen | Return | Sharpe | Trades |
+|-----:|-------------|------------:|-------:|-------:|-------:|
+| 0 | 2024-01-02 → 2024-03-05 | 10 | +8.42% | 3.05 | 1 |
+| 1 | 2024-03-05 → 2024-05-07 | 10 | +1.71% | 0.44 | 2 |
+| 2 | 2024-05-07 → 2024-07-09 | 10 | −1.19% | −0.81 | 2 |
+| 3 | 2024-07-09 → 2024-09-10 | 10 | −1.97% | −1.12 | 2 |
+| 4 | 2024-09-10 → 2024-11-12 | 5 | 0.00% | 0.00 | 0 |
+| 5 | 2024-11-12 → 2025-01-14 | 10 | 0.00% | 0.00 | 0 |
+| 6 | 2025-01-14 → 2025-03-18 | 5 | −0.33% | −0.49 | 1 |
+| 7 | 2025-03-18 → 2025-05-20 | 5 | +0.82% | 0.10 | 1 |
+| 8 | 2025-05-20 → 2025-07-22 | 40 | +8.50% | 2.93 | 1 |
+| 9 | 2025-07-22 → 2025-09-23 | 40 | +3.62% | 0.98 | 1 |
+| 10 | 2025-09-23 → 2025-11-25 | 40 | −7.28% | −2.55 | 1 |
+
+Compounded, the out-of-sample folds returned +11.89% — but read the table
+the way the report intends: the "best" fast window is 10 for a year, then 5,
+then 40; fold Sharpes swing from +3.05 to −2.55; and `stability` is 0.15.
+There is no stable parameter and no consistent skill here — the walk-forward
+shows that in a way the single +0.56% headline never could. If the folds had
+agreed on a parameter *and* posted similar Sharpes, that — not a tuned
+full-sample number — would be evidence worth trusting.
+
 ---
 
 ## Original design document
